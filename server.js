@@ -5,6 +5,7 @@ import "dotenv/config.js";
 const app = express();
 const urlMongoose = `mongodb+srv://yared:${process.env.MONGO_PASS}@cluster0.lz9kfey.mongodb.net/react_with_mongo?retryWrites=true&w=majority`;
 const port = process.env.PORT || 8000;
+app.use(express.json());
 app.use("/", ItemsRouting());
 //Connect to Mongoose
 async function makeConnection() {
