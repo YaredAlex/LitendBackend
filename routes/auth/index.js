@@ -88,7 +88,7 @@ function authRoute() {
         if (e.constraint == "users_email_key") {
           error = "email allready exist";
         }
-
+        console.log("error for registering ", e);
         return next(error);
       }
     }
