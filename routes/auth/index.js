@@ -124,7 +124,7 @@ function authRoute() {
     // if (!req.session?.passport?.user)
     //   return res.status(500).json({ error: "unautherized" });
     console.log(req.body);
-    const token = req.body.token;
+    const token = req.headers.authorization.split(" ")[1];
     if (!token) return res.status(500).json({ error: "missing token" });
     let decoded = null;
     try {
