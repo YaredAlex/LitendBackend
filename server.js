@@ -69,7 +69,7 @@ app.use("/api/auth", authRoute());
 app.use("/api/user", userRouter());
 app.use("/api/posts", postRouter());
 app.use("/api/service", serviceRoute());
-app.use((err, req, res) => {
+app.use((err, req, res, next) => {
   console.log(err);
   return res.status(500).json({ error: err });
 });
