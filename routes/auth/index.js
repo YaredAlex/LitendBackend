@@ -15,7 +15,7 @@ import { jwt_secret } from "../../constants/constant.js";
 function authRoute() {
   const router = Router();
   //ValidateJWT
-  router.get("/jwt-valid", (req, res) => {
+  router.get("/jwt-valid", (req, res, next) => {
     const token = req.headers.authorization.split(" ")[1];
     if (!token) return res.status(200).json({ error: "token required" });
     try {
@@ -92,7 +92,7 @@ function authRoute() {
         return next(error);
       }
     }
-    return res.status(500).json(validateInput);
+    return res.status(500).json({ error: "Invalid input", ...validateInput });
   });
 
   //send Verification code
