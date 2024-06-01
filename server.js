@@ -5,12 +5,15 @@ import { Strategy } from "passport-local";
 import { pool } from "./config.js";
 import userRouter from "./routes/users/index.js";
 import bcrypt from "bcrypt";
+import postRouter from "./routes/post/index.js";
+import serviceRoute from "./routes/services/services.js";
+import authRoute from "./routes/auth/index.js";
 const app = express();
 
 app.use(express.json());
 app.use(
   session({
-    secret: "random",
+    secret: "litendseries",
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -42,6 +45,7 @@ const userAuth = async (username, password, done) => {
 passport.use(
   new Strategy({ usernameField: "email", passwordField: "password" }, userAuth)
 );
+
 passport.serializeUser((user, done) => {
   return done(null, { email: user.email });
 });
@@ -54,14 +58,18 @@ passport.deserializeUser(async (userEmail, done) => {
     ]);
   } catch (e) {
     console.log(e.message);
+    return done("error", null, "error");
   }
 
   if (res?.rowCount > 0) return done(null, res.rows[0]);
   return done("unknow user", { user: "unknow" });
 });
 
+app.use("/api/auth", authRoute());
 app.use("/api/user", userRouter());
-app.use((err, req, res, next) => {
+app.use("/api/posts", postRouter());
+app.use("/api/service", serviceRoute());
+app.use((err, req, res) => {
   console.log(err);
   return res.status(500).json({ error: err });
 });

@@ -1,11 +1,12 @@
 import { createTransport } from "nodemailer";
+import "dotenv/config.js";
 
 const transport = createTransport({
   host: "smtp.hostinger.com",
   port: 465,
   auth: {
-    user: "yared@gokapinnotech.com",
-    pass: "Yared16@@",
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD,
   },
 });
 const sendEmail = (email, text) => {
