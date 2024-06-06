@@ -77,11 +77,26 @@ function userRouter() {
         "select * from posts where user_id=$1 order by post_date;",
         [id]
       );
-      console.log(query.rows);
       return res.status(200).send(query.rows);
     } catch (e) {
       console.log(e);
       res.status(500).json({ msg: `error ${e.message}` });
+    }
+  });
+  router.delete("/post/:id", async (req, res) => {
+    try {
+      const token = req.headers.authorization.split(" ")[1];
+      if (!token) {
+        return response.status(401).json({ msg: "unauthorized" });
+      }
+      const { id } = req.params;
+      //saving to database
+      const query = await pool.query("delete from posts where id=$1;", [id]);
+      console.log("success", query.rows);
+      return res.status(200).json({ msg: "success" });
+    } catch (e) {
+      console.log(e);
+      res.status(500).json({ error: `error ${e.message}` });
     }
   });
 
