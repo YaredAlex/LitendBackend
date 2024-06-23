@@ -16,7 +16,6 @@ function postRouter() {
       const query = await pool.query(
         "select posts.id as postId,users.id,post_date,media_url,likes, first_name,profile_pic,likes from users join posts on posts.user_id = users.id order by posts.post_date;"
       );
-      console.log(query.rows);
       res.status(200).send(query.rows);
     } catch (e) {
       res.status(500).json({ error: e.message });

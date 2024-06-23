@@ -153,7 +153,77 @@ function authRoute() {
       return res.status(500).json({ error: e.message });
     }
   });
+  //forget Send OTP
+  router.post("/forget/send-otp", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) return res.status(500).json({ error: "email is required" });
+      //get user id
+      const idQuery = await pool.query(
+        "select id from users where email = $1",
+        [email]
+      );
+      if (idQuery.rowCount < 1) {
+        return res.status(500).json({ error: "email doesn't exist" });
+      }
+      const userId = idQuery.rows[0].id;
+      const otp = generateOTP(5);
+      //save otp to database
+      const query = await pool.query(
+        "insert into otps values($1,$2) returning *",
+        [userId, otp]
+      );
+      console.log(query.rows);
+      // req.session.otp = otp;
+      await sendEmailOTP(email, otp);
+      return res.status(200).json({ msg: "OTP sent", id: userId });
+    } catch (e) {
+      console.log(e.message);
+      return res.status(500).json({ error: e.message });
+    }
+  });
+  //forget/verify-otp
+  router.post("/forget/verify-otp", async (req, res) => {
+    const { otpCode, userId } = req.body;
+    const query = await pool.query(
+      "select otp from otps where id=$1 order by created_at desc limit 1;",
+      [userId]
+    );
+    const otp_db = query.rows[0]?.otp;
 
+    if (!otpCode) return res.status(500).json({ error: "OTP is required" });
+    try {
+      if (otpCode == otp_db) {
+        await pool.query(
+          "update users set is_verified=true where id=$1 returning *;",
+          [userId]
+        );
+        return res.status(200).json({ msg: "OTP is verified" });
+      } else return res.status(500).json({ error: "otp doesn't match" });
+    } catch (e) {
+      console.log("error while saving user", e.message);
+      return res.status(500).json({ error: e.message });
+    }
+  });
+  //Reset Password
+  router.put("/forget/reset-pass", async (req, res) => {
+    // userId
+    const { password, userId } = req.body;
+    try {
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // change password
+      const changeQuery = await pool.query(
+        "update users set password = $1 where id = $2 returning *;",
+        [hashedPassword, userId]
+      );
+      if (changeQuery.rowCount == 1)
+        return res.status(200).json({ msg: "change success" });
+    } catch (e) {
+      console.log(e);
+      return res.status(500).json({ error: e.message });
+    }
+  });
   return router;
 }
 
