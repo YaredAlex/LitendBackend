@@ -6,7 +6,65 @@ import { jwt_secret } from "../../constants/constant.js";
 
 function userRouter() {
   const router = Router();
-  //send userProfile
+  //check if user if following
+  router.get("/profile/following/:user_id/:followed_id", async (req, res) => {
+    //check if there is token in the req
+    const { followed_id, user_id } = req.params;
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(403).json({ error: "no token" });
+    try {
+      jwt.verify(token, jwt_secret);
+      //get user from db
+      const query = await pool.query(
+        `SELECT EXISTS (
+    SELECT 1
+    FROM followers
+    WHERE follower_id = $1
+    AND followed_id = $2
+) AS is_following;`,
+        [user_id, followed_id]
+      );
+      return res.status(200).json(query.rows[0]);
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  });
+  //get profile by Id
+  router.get("/profile/:id", async (req, res) => {
+    //check if there is token in the req
+    const { id } = req.params;
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(403).json({ error: "no token" });
+    try {
+      jwt.verify(token, jwt_secret);
+      //get user from db
+      const query = await pool.query(
+        `SELECT 
+    u.first_name,
+    u.last_name,
+    COUNT(DISTINCT p.id) AS post_count,
+    COUNT(DISTINCT f1.follower_id) AS follower_count,
+    COUNT(DISTINCT f2.followed_id) AS following_count
+FROM 
+    users u
+LEFT JOIN 
+    posts p ON u.id = p.user_id
+LEFT JOIN 
+    followers f1 ON u.id = f1.followed_id
+LEFT JOIN 
+    followers f2 ON u.id = f2.follower_id
+WHERE 
+    u.id = $1
+GROUP BY 
+    u.id;`,
+        [id]
+      );
+      return res.status(200).json(query.rows[0]);
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  });
+  //get userProfile
   router.get("/profile", async (req, res) => {
     //check if there is token in the req
     const token = req.headers.authorization.split(" ")[1];

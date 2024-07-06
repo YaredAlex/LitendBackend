@@ -42,7 +42,52 @@ function postRouter() {
       res.status(500).json({ error: e.message });
     }
   });
+  //post reply
+  router.post("/post/replies", async (req, res) => {
+    const { post_id, reply_text } = req.body;
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ msg: "unauthorized" });
+    }
+    if (!post_id || !reply_text) {
+      return res
+        .status(400)
+        .json({ error: "post_id and reply_text are required" });
+    }
 
+    try {
+      const { id } = jwt.verify(token, jwt_secret);
+      const result = await pool.query(
+        "INSERT INTO post_replies (post_id, replier_id, reply_text, timestamp) VALUES ($1, $2, $3, NOW()) RETURNING *",
+        [post_id, id, reply_text]
+      );
+
+      res.status(200).json(result.rows[0]);
+    } catch (e) {
+      console.error("Error inserting reply:", e);
+      res.status(500).json({ error: `${e.message}` });
+    }
+  });
+
+  // getRepliest
+  router.get("/replies/:postId", async (req, res) => {
+    const { postId } = req.params;
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ msg: "unauthorized" });
+    }
+    try {
+      jwt.verify(token, jwt_secret);
+      const result = await pool.query(
+        "SELECT * FROM post_replies WHERE post_id = $1 ORDER BY timestamp DESC",
+        [postId]
+      );
+      res.status(200).json(result.rows);
+    } catch (e) {
+      console.error("Error getting replies:", e);
+      res.status(500).json({ error: `${e.message}` });
+    }
+  });
   return router;
 }
 
