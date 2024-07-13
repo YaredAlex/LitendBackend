@@ -79,7 +79,7 @@ function postRouter() {
     try {
       jwt.verify(token, jwt_secret);
       const result = await pool.query(
-        "SELECT * FROM post_replies WHERE post_id = $1 ORDER BY timestamp DESC",
+        "SELECT post_id, replier_id,reply_text,timestamp,first_name,profile_pic,last_name FROM post_replies inner join users on users.id=post_replies.replier_id WHERE post_id = $1 ORDER BY timestamp DESC",
         [postId]
       );
       res.status(200).json(result.rows);
