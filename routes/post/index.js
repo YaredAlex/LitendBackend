@@ -32,12 +32,13 @@ function postRouter() {
       const { id } = jwt.verify(token, jwt_secret);
       console.log("liker id", id);
       const { postId } = req.params;
-      const query = await pool.query("insert into likes values($1,$2)", [
+      await pool.query("insert into likes values($1,$2)", [postId, id]);
+      //return post date
+      const postdate = await pool.query("select * from posts where id=$1", [
         postId,
-        id,
       ]);
-      console.log(query.rows);
-      res.status(200).json({ msg: "success" });
+
+      return res.status(200).json(postdate.rows[0]);
     } catch (e) {
       res.status(500).json({ error: e.message });
     }
