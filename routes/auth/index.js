@@ -15,12 +15,18 @@ import { jwt_secret } from "../../constants/constant.js";
 function authRoute() {
   const router = Router();
   //ValidateJWT
-  router.get("/jwt-valid", (req, res, next) => {
+  router.get("/jwt-valid", async (req, res, next) => {
     const token = req.headers.authorization.split(" ")[1];
     if (!token) return res.status(200).json({ error: "token required" });
     try {
-      jwt.verify(token, jwt_secret);
-      res.status(200).json({ msg: "success" });
+      const { id } = jwt.verify(token, jwt_secret);
+      const query = await pool.query(
+        "select id,is_verified,email from users where id=$1",
+        [id]
+      );
+      if (query.rowCount < 1)
+        return res.status(500).json({ error: "user doesn't exist!" });
+      res.status(200).json(query.rows[0]);
     } catch (e) {
       res.status(500).json({ error: e.message });
     }

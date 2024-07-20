@@ -30,17 +30,31 @@ function postRouter() {
 
     try {
       const { id } = jwt.verify(token, jwt_secret);
-      console.log("liker id", id);
       const { postId } = req.params;
-      await pool.query("insert into likes values($1,$2)", [postId, id]);
-      //return post date
-      const postdate = await pool.query("select * from posts where id=$1", [
-        postId,
-      ]);
+      try {
+        await pool.query("insert into likes values($1,$2)", [postId, id]);
+        //return post date
+        const postdata = await pool.query("select * from posts where id=$1", [
+          postId,
+        ]);
 
-      return res.status(200).json(postdate.rows[0]);
+        return res.status(200).json(postdata.rows[0]);
+      } catch (e) {
+        if (e.code == 23505) {
+          //unlike the post
+          await pool.query(
+            "DELETE FROM likes WHERE post_id = $1 AND liker_id = $2;",
+            [postId, id]
+          );
+          const postdata = await pool.query("select * from posts where id=$1", [
+            postId,
+          ]);
+          return res.status(200).json(postdata.rows[0]);
+        }
+        res.status(500).json({ error: e.code ?? e.message });
+      }
     } catch (e) {
-      res.status(500).json({ error: e.message });
+      res.status(500).json({ error: e.code ?? e.message });
     }
   });
   //post reply

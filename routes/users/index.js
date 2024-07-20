@@ -37,12 +37,22 @@ function userRouter() {
     try {
       const { id } = jwt.verify(token, jwt_secret);
       //add follow to table
-      const query = await pool.query(
-        "insert into followers (follower_id,followed_id) values($1,$2)",
-        [id, followedId]
-      );
-
-      return res.status(200).json({ msg: "sucess" });
+      try {
+        const query = await pool.query(
+          "insert into followers (follower_id,followed_id) values($1,$2)",
+          [id, followedId]
+        );
+        return res.status(200).json({ msg: "follow" });
+      } catch (e) {
+        if (e.code == 23505) {
+          const query = await pool.query(
+            "delete from followers where follower_id = $1 and followed_id = $2",
+            [id, followedId]
+          );
+          return res.status(200).json({ msg: "unfollow" });
+        }
+        return res.status(500).json({ error: e.message });
+      }
     } catch (e) {
       return res.status(500).json({ error: e.message });
     }
@@ -189,7 +199,6 @@ GROUP BY
         "update users set profile_pic=$1 where id=$2 returning *;",
         [imgUrl, id]
       );
-      console.log(query.rows);
       return res.status(200).json({ msg: "success" });
     } catch (e) {
       console.log(e);
@@ -223,7 +232,6 @@ GROUP BY
       const { id } = req.params;
       //saving to database
       const query = await pool.query("delete from posts where id=$1;", [id]);
-      console.log("success", query.rows);
       return res.status(200).json({ msg: "success" });
     } catch (e) {
       console.log(e);
